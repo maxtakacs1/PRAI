@@ -1,11 +1,17 @@
-from fastapi import FastAPI, UploadFile, File, Form
-from typing import Optional, List
+import io
+import os
+import pathlib
+import logging
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from typing import List, Optional
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
-import os
-import logging
-import openai
+import PyPDF2
+import docx
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("PRAI API")
@@ -21,12 +27,33 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# mount PoC folder so HTML/JS/CSS under /poc/* are served
+poc_dir = pathlib.Path(__file__).parents[2] / "PoC"
+app.mount("/poc", StaticFiles(directory=str(poc_dir), html=True), name="poc")
+
 #--- Helper functions for invoke ---#
-# TODO: Add helper functions here\
-def process_file(file):
-    logger.info("Processing file")
-    # TODO: Add file processing logic here
-    return
+def process_file(file: UploadFile):
+    logger.info(f"Processing file: {file.filename}")
+    ext = os.path.splitext(file.filename)[1].lower()
+    data = file.file.read()
+    stream = io.BytesIO(data)
+    text = ""
+    if ext == ".pdf":
+        reader = PyPDF2.PdfReader(stream)
+        for page in reader.pages:
+            text += (page.extract_text() or "") + "\n\n"
+    elif ext == ".docx":
+        document = docx.Document(stream)
+        for para in document.paragraphs:
+            text += para.text + "\n\n"
+    else:
+        try:
+            text = data.decode("utf-8")
+        except:
+            raise HTTPException(status_code=400, detail=f"Unsupported file type: {ext}")
+    # simple markdown conversion (preserve paragraphs)
+    md = text.strip()
+    return {"filename": file.filename, "content": md}
 
 def process_url(url):
     logger.info("Processing URL")
@@ -54,7 +81,7 @@ def read_root():
 def read_health():
     return {"status": "ok"}
 
-@app.get("/invoke")
+@app.post("/invoke")
 async def invoke(
     source_choice: str = Form(...),
     files: Optional[List[UploadFile]] = File(None),
@@ -116,5 +143,57 @@ async def upload_reference(
         processed_reference = process_reference(ref)
         # TODO: store processed reference in database
     return
-            
-    
+
+# PoC endpoint
+@app.post("/poc/invoke")
+async def poc_invoke(
+    source_file: UploadFile = File(...),
+    topic: str = Form(...),
+    length: str = Form(...),
+    style_file: UploadFile = File(...),
+):
+    logger.info("PoC invoke called")
+    src = process_file(source_file)
+    stl = process_file(style_file)
+
+    llm = ChatOpenAI(temperature=0.7)
+    # Define length_directions based on length
+    length_directions = ""
+    if length == "LinkedIn Article":
+        length_directions = "Somewhere between 1500 and 2500 words, and it should be a professional article that is easy to read and understand. It should focus on engaging the reader and providing valuable insights."
+    elif length == "Press Release":
+        length_directions = "Somewhere between 300 and 500 words, and it should be a concise and informative announcement that captures the essence of the news being shared. It should be written in a clear and engaging manner."
+    elif length == "LinkedIn Post":
+        length_directions = "Somewhere between 100 and 300 words, and it should be a short and engaging post that captures the reader's attention. It should be written in a conversational tone and encourage interaction."
+    else:
+        length_directions = "Somewhere between 1000 and 1500 words, and it should be a well-structured and informative article that provides valuable insights on the topic. It should be written in a professional tone and include relevant examples."
+
+    # 1) Info sheet generation
+    prompt1 = (
+        f"You are an AI assistant. Create an information sheet about '{topic}', "
+        f" for a final paper of {length} length to be written on it, and the specific needs are exactly '{length_directions}', based on the following text (markdown):\n\n{src['content']}"
+    )
+    resp1 = llm([HumanMessage(content=prompt1)])
+    info_sheet = resp1[0].text.strip()
+
+    # 2) Final draft generation
+    prompt2 = (
+        f"You are an AI assistant. Using the following information sheet (markdown):\n\n{info_sheet}\n\n"
+        f"Write a final article of {length} length, which means specifically '{length_directions}', in the writing style matching this reference text (markdown):\n\n{stl['content']}"
+    )
+    resp2 = llm([HumanMessage(content=prompt2)])
+    final_draft = resp2[0].text.strip()
+
+    return JSONResponse({
+        "topic": topic,
+        "length": length,
+        "info_sheet": info_sheet,
+        "final_draft": final_draft
+    })
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8080)
+
+

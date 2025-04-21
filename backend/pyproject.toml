@@ -14,6 +14,10 @@ fastapi = "*"
 uvicorn = "*"
 python-dotenv = "*"
 openai = "*"
+langchain-core = "*"
+langchain-community = "*"
+langchain-openai = "*"
+python-multipart = "*"
 
 [build-system]
 requires = ["poetry-core"]

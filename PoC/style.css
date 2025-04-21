@@ -1,0 +1,6 @@
+body { font-family: sans-serif; margin: 2rem; }
+form { display: grid; gap: 1rem; max-width: 400px; }
+label { display: flex; flex-direction: column; }
+button { padding: .5rem 1rem; }
+#output { margin-top: 2rem; }
+pre { background: #f0f0f0; padding: 1rem; white-space: pre-wrap; }

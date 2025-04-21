@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PRAI PoC</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <h1>PRAI PoC</h1>
+  <body>
+    <h2>Welcome to the PRAI Proof of Concept</h2>
+    <p>This is a simple web application that allows you to generate a final draft based on a source file and a style file.</p>
+    <p>PRAI will generate a document based on the content of the source file and the writing style of the style file.</p>
+    <p>The title you provide will specify what type of document you want to generate as well as the stance you want to take on the topic.</p>
+    <p>Upload your source file (PDF/DOCX), specify the topic, length, and upload a style file (PDF/DOCX) to generate the final draft.</p>
+    <p>Click the "Generate" button to create the final draft.</p>
+  </body>
+  <form id="pocForm">
+    <label>Source file (PDF/DOCX): <input type="file" name="source_file" required></label>
+    <label>Topic: <input type="text" name="topic" required></label>
+    <label>Length:
+      <select name="length">
+        <option>LinkedIn Post</option>
+        <option>Press Release</option>
+        <option>LinkedIn Article</option>
+      </select>
+    </label>
+    <label>Style file (PDF/DOCX): <input type="file" name="style_file" required></label>
+    <button type="submit">Generate</button>
+  </form>
+  <div id="output">
+    <h2>Info Sheet</h2><pre id="info_sheet"></pre>
+    <h2>Final Draft</h2><pre id="final_draft"></pre>
+  </div>
+  <!-- buttons for view/download -->
+  <button id="viewBtn">View Final Draft</button>
+  <button id="downloadBtn">Download Final Draft as PDF</button>
+  <script src="script.js"></script>
+</body>
+</html>
