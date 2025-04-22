@@ -165,6 +165,8 @@ async def poc_invoke(
         length_directions = "Somewhere between 300 and 500 words, and it should be a concise and informative announcement that captures the essence of the news being shared. It should be written in a clear and engaging manner."
     elif length == "LinkedIn Post":
         length_directions = "Somewhere between 100 and 300 words, and it should be a short and engaging post that captures the reader's attention. It should be written in a conversational tone and encourage interaction."
+    elif length == "Opinion Article":
+        length_directions = "Somewhere between 300 and 550 words, and it should be a well-reasoned and thought-provoking article that presents a clear opinion on the topic. It should be written in a persuasive and engaging tone similar to that of the reference and include relevant examples."
     else:
         length_directions = "Somewhere between 1000 and 1500 words, and it should be a well-structured and informative article that provides valuable insights on the topic. It should be written in a professional tone and include relevant examples."
 
