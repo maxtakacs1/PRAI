@@ -7,35 +7,47 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-  <h1>PRAI PoC</h1>
-  <body>
+  <div class="container">
+    <h1>PRAI PoC</h1>
     <h2>Welcome to the PRAI Proof of Concept</h2>
-    <p>This is a simple web application that allows you to generate a final draft based on a source file and a style file.</p>
-    <p>PRAI will generate a document based on the content of the source file and the writing style of the style file.</p>
+    <p>This is a simple web application that allows you to generate a final draft based on a source file and a style reference.</p>
+    <p>PRAI will generate a document based on the content of the source file and the writing style/tone of the style reference.</p>
     <p>The title you provide will specify what type of document you want to generate as well as the stance you want to take on the topic.</p>
-    <p>Upload your source file (PDF/DOCX), specify the topic, length, and upload a style file (PDF/DOCX) to generate the final draft.</p>
+    <p>Upload your source file (PDF/DOCX), specify the topic, length, and upload a style reference (PDF/DOCX) to generate the final draft.</p>
+    <p>The source file should contain the event you're writing about or information about the topic.</p>
+    <p>The style reference should contain the writing style or tone you want to emulate. This could be a previous article, a blog post, or even your brand guidelines.</p>
     <p>Click the "Generate" button to create the final draft.</p>
-  </body>
-  <form id="pocForm">
-    <label>Source file (PDF/DOCX): <input type="file" name="source_file" required></label>
-    <label>Topic: <input type="text" name="topic" required></label>
-    <label>Length:
-      <select name="length">
-        <option>LinkedIn Post</option>
-        <option>Press Release</option>
-        <option>LinkedIn Article</option>
-      </select>
-    </label>
-    <label>Style file (PDF/DOCX): <input type="file" name="style_file" required></label>
-    <button type="submit">Generate</button>
-  </form>
-  <div id="output">
-    <h2>Info Sheet</h2><pre id="info_sheet"></pre>
-    <h2>Final Draft</h2><pre id="final_draft"></pre>
+
+    <form id="pocForm">
+      <label>Source File (PDF/DOCX): <input type="file" name="source_file" required></label>
+      <label>Topic: <input type="text" name="topic" required></label>
+      <label>Length:
+        <select name="length">
+          <option>LinkedIn Post</option>
+          <option>Press Release</option>
+          <option>LinkedIn Article</option>
+        </select>
+      </label>
+      <label>Style Reference (PDF/DOCX): <input type="file" name="style_file" required></label>
+      <button type="submit">Generate</button>
+    </form>
+
+    <div id="output">
+      <div class="output-section">
+        <h2>Info Sheet</h2>
+        <pre id="info_sheet"></pre>
+      </div>
+      <div class="output-section">
+        <h2>Final Draft</h2>
+        <pre id="final_draft"></pre>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="viewBtn">View Final Draft</button>
+      <button id="downloadBtn">Download Final Draft as PDF</button>
+    </div>
   </div>
-  <!-- buttons for view/download -->
-  <button id="viewBtn">View Final Draft</button>
-  <button id="downloadBtn">Download Final Draft as PDF</button>
   <script src="script.js"></script>
 </body>
 </html>
