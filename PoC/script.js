@@ -17,8 +17,18 @@ document.getElementById('pocForm').addEventListener('submit', async e => {
 document.getElementById('viewBtn').addEventListener('click', () => {
   const content = document.getElementById('final_draft').textContent;
   const w = window.open('', '_blank');
-  w.document.write('<pre>' + content + '</pre>');
-  w.document.close();
+  if (!w) {
+    alert('Unable to open window');
+    return;
+  }
+  w.document.title = 'Final Draft';
+  // ensure body exists
+  w.document.body.innerHTML = '';
+  const pre = w.document.createElement('pre');
+  pre.textContent = content;
+  pre.style.whiteSpace = 'pre-wrap';
+  pre.style.padding = '1rem';
+  w.document.body.appendChild(pre);
 });
 
 // download as PDF
