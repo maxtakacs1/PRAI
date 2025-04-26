@@ -147,14 +147,23 @@ async def upload_reference(
 # PoC endpoint
 @app.post("/poc/invoke")
 async def poc_invoke(
-    source_file: UploadFile = File(...),
+    source_files: List[UploadFile] = File(...),
     topic: str = Form(...),
     length: str = Form(...),
-    style_file: UploadFile = File(...),
+    style_files: List[UploadFile] = File(...),
 ):
     logger.info("PoC invoke called")
-    src = process_file(source_file)
-    stl = process_file(style_file)
+    # process multiple uploads
+    src_list = [process_file(f) for f in source_files]
+    stl_list = [process_file(f) for f in style_files]
+
+    # combine each file's content into a markdown block
+    src_md = "\n\n---\n\n".join(
+        [f"## Source: {item['filename']}\n\n{item['content']}" for item in src_list]
+    )
+    style_md = "\n\n---\n\n".join(
+        [f"## Style: {item['filename']}\n\n{item['content']}" for item in stl_list]
+    )
 
     llm = ChatOpenAI(temperature=0.7)
     # Define length_directions based on length
@@ -173,7 +182,8 @@ async def poc_invoke(
     # 1) Info sheet generation
     prompt1 = (
         f"You are an AI assistant. Create an information sheet about '{topic}', "
-        f" for a final paper of {length} length to be written on it, and the specific needs are exactly '{length_directions}', based on the following text (markdown):\n\n{src['content']}"
+        f"for a final paper of {length} length with these requirements: '{length_directions}', "
+        f"based on the following source texts (markdown):\n\n{src_md}"
     )
     resp1 = llm([HumanMessage(content=prompt1)])
     info_sheet = resp1[0].text.strip()
@@ -181,7 +191,8 @@ async def poc_invoke(
     # 2) Final draft generation
     prompt2 = (
         f"You are an AI assistant. Using the following information sheet (markdown):\n\n{info_sheet}\n\n"
-        f"Write a final article of {length} length, which means specifically '{length_directions}', in the writing style matching this reference text (markdown):\n\n{stl['content']}"
+        f"Write a final article of {length} length (requirements: '{length_directions}'), "
+        f"in the writing style matching these reference texts (markdown):\n\n{style_md}"
     )
     resp2 = llm([HumanMessage(content=prompt2)])
     final_draft = resp2[0].text.strip()
