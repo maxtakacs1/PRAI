@@ -165,7 +165,7 @@ async def poc_invoke(
         [f"## Style: {item['filename']}\n\n{item['content']}" for item in stl_list]
     )
 
-    llm = ChatOpenAI(temperature=0.7)
+    llm = ChatOpenAI(temperature=0.7, model="gpt-4o-mini-2024-07-18")
     # Define length_directions based on length
     length_directions = ""
     if length == "LinkedIn Article":
