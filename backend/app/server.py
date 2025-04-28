@@ -2,9 +2,10 @@ import io
 import os
 import pathlib
 import logging
+import time
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from typing import List, Optional
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
@@ -18,6 +19,7 @@ logger = logging.getLogger("PRAI API")
 
 app = FastAPI(title="PRAI API", version="0.1.0")
 load_dotenv()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 app.add_middleware(
     CORSMiddleware,
@@ -27,9 +29,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# mount PoC folder so HTML/JS/CSS under /poc/* are served
+# mount PoC folder so HTML/JS/CSS under /static/* are served
 poc_dir = pathlib.Path(__file__).parents[2] / "PoC"
-app.mount("/poc", StaticFiles(directory=str(poc_dir), html=True), name="poc")
+app.mount("/static", StaticFiles(directory=str(poc_dir), html=True), name="static")
+
+# serve the PoC UI
+@app.get("/poc", response_class=HTMLResponse)
+def poc_ui():
+    return FileResponse(poc_dir / "index.html")
+
+# serve the offline PoC UI
+@app.get("/praipoc", response_class=HTMLResponse)
+def pcpoc_ui():
+    return FileResponse(poc_dir / "pcpoc.html")
 
 #--- Helper functions for invoke ---#
 def process_file(file: UploadFile):
@@ -182,8 +194,8 @@ async def poc_invoke(
     # 1) Info sheet generation
     prompt1 = (
         f"You are an AI assistant. Create an information sheet about '{topic}', "
-        f"for a final paper of {length} length with these requirements: '{length_directions}', "
-        f"based on the following source texts (markdown):\n\n{src_md}"
+        f"for a final paper which is {length} length with these requirements: '{length_directions}', "
+        f"based on the following source texts (markdown). Reminder that you are only generating the info sheet, and not the paper itself:\n\n{src_md}"
     )
     resp1 = llm([HumanMessage(content=prompt1)])
     info_sheet = resp1[0].text.strip()
@@ -191,7 +203,7 @@ async def poc_invoke(
     # 2) Final draft generation
     prompt2 = (
         f"You are an AI assistant. Using the following information sheet (markdown):\n\n{info_sheet}\n\n"
-        f"Write a final article of {length} length (requirements: '{length_directions}'), "
+        f"Write a final article of {length} length (requirements: '{length_directions}') on '{topic}', "
         f"in the writing style matching these reference texts (markdown):\n\n{style_md}"
     )
     resp2 = llm([HumanMessage(content=prompt2)])
@@ -202,6 +214,35 @@ async def poc_invoke(
         "length": length,
         "info_sheet": info_sheet,
         "final_draft": final_draft
+    })
+
+# Alternative offline PoC endpoint
+@app.post("/praipoc/invoke")
+async def pcpoc_invoke(topic: str = Form(...)):
+    base = pathlib.Path(__file__).parents[2]
+    resp_dir = base / "pcresponses"
+    first = topic.strip().split()[0]
+
+    if first == "LuminaTech":
+        info_file = resp_dir / "LTinfosheet.md"
+        draft_file = resp_dir / "LTpressrelease.md"
+    elif first == "Brightwave":
+        info_file = resp_dir / "BSinfosheet.md"
+        draft_file = resp_dir / "BSpressrelease.md"
+    elif first == "Blackflag":
+        info_file = resp_dir / "BFinfosheet.md"
+        draft_file = resp_dir / "BFpressrelease.md"
+    else:
+        raise HTTPException(status_code=400, detail="Unsupported topic prefix")
+
+    info_content = info_file.read_text()
+    draft_content = draft_file.read_text()
+    time.sleep(5)  # simulate processing delay
+
+    return JSONResponse({
+        "topic": topic,
+        "info_sheet": info_content,
+        "final_draft": draft_content
     })
 
 

@@ -3,7 +3,7 @@ document.getElementById('pocForm').addEventListener('submit', async e => {
   const form = e.target;
   const data = new FormData(form);
 
-  const res = await fetch('/poc/invoke', { method: 'POST', body: data });
+  const res = await fetch('/praipoc/invoke', { method: 'POST', body: data });
   if (!res.ok) {
     alert('Error: ' + res.statusText);
     return;
@@ -35,18 +35,14 @@ document.getElementById('viewBtn').addEventListener('click', () => {
 
 // download as PDF
 document.getElementById('downloadBtn').addEventListener('click', () => {
-  // get raw markdown
   const md = window._latestDraft || '';
-  // convert to HTML
   const html = marked.parse(md);
-  // wrap for styling
   const wrapper = document.createElement('div');
   wrapper.className = 'markdown-body';
   wrapper.style.padding = '1rem';
   wrapper.innerHTML = html;
   document.body.appendChild(wrapper);
 
-  // html2pdf options
   const opt = {
     margin:       0.5,
     filename:     'final_draft.pdf',
